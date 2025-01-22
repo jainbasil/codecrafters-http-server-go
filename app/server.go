@@ -6,13 +6,12 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 )
 
 func main() {
-	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Printf("Listening on host: localhost, port: 4221\n")
 
-	// Uncomment this block to pass the first stage
 	l, err := net.Listen("tcp", "0.0.0.0:4221")
 	if err != nil {
 		fmt.Println("Failed to bind to port 4221")
@@ -40,9 +39,21 @@ func main() {
 			if err != nil {
 				fmt.Println("Error reading: ", err.Error())
 			}
-			fmt.Println(bytes.NewBuffer(buf).String())
+			req := string(bytes.NewBuffer(buf).String())
+			fmt.Println(req)
 
-			conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+			// split by \r\n and get the first line --> request line.
+			requestLine := strings.Split(req, "\r\n")[0]
+			requestTarget := strings.Fields(requestLine)[1]
+
+			response := "HTTP/1.1 200 OK\r\n\r\n"
+
+			// only supports /
+			if requestTarget != "/" {
+				response = "HTTP/1.1 404 Not Found\r\n\r\n"
+			}
+
+			conn.Write([]byte(response))
 			conn.Close()
 		}(conn)
 	}
