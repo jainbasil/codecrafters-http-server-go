@@ -55,8 +55,8 @@ func ParseRequest(buf []byte) HttpRequest {
 	}
 
 	// last item in the array will be the body
-	r.Body = []byte(requestArray[len(requestArray)-1])
 
+	r.Body = []byte(strings.Trim(requestArray[len(requestArray)-1], "\x00"))
 	return r
 }
 
@@ -86,22 +86,46 @@ func HandleRequest(request HttpRequest) HttpResponse {
 		matches := r.FindStringSubmatch(request.RequestTarget)
 
 		filePath := FileDirectory + matches[1]
-		fileContent, err := os.ReadFile(filePath)
-		if err != nil {
-			fmt.Println("Error reading file:", err)
+
+		if request.Method == "GET" {
+			fileContent, err := os.ReadFile(filePath)
+			if err != nil {
+				fmt.Println("Error reading file:", err)
+				return HttpResponse{
+					StatusLine: "HTTP/1.1 404 Not Found",
+				}
+			}
+			response := HttpResponse{
+				StatusLine: "HTTP/1.1 200 OK",
+				Headers: map[string]string{
+					"Content-Type":   "application/octet-stream",
+					"Content-Length": strconv.Itoa(len(fileContent)),
+				},
+				Body: []byte(fileContent),
+			}
+			return response
+		} else if request.Method == "POST" {
+			file, err := os.Create(filePath)
+			if err == nil {
+				_, err = file.Write(request.Body)
+				file.Close()
+			}
+			if err != nil {
+				fmt.Println("Error writing file:", err)
+				return HttpResponse{
+					StatusLine: "HTTP/1.1 500 Internal Server Error",
+				}
+			}
+			response := HttpResponse{
+				StatusLine: "HTTP/1.1 201 Created",
+			}
+			return response
+		} else {
 			return HttpResponse{
-				StatusLine: "HTTP/1.1 404 Not Found",
+				StatusLine: "HTTP/1.1 405 Method Not Allowed",
 			}
 		}
-		response := HttpResponse{
-			StatusLine: "HTTP/1.1 200 OK",
-			Headers: map[string]string{
-				"Content-Type":   "application/octet-stream",
-				"Content-Length": strconv.Itoa(len(fileContent)),
-			},
-			Body: []byte(fileContent),
-		}
-		return response
+
 	case request.RequestTarget == "/user-agent":
 		userAgent := request.Headers["User-Agent"]
 		response := HttpResponse{
