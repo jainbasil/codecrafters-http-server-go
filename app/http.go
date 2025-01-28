@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -75,6 +76,30 @@ func HandleRequest(request HttpRequest) HttpResponse {
 				"Content-Length": strconv.Itoa(len(matches[1])),
 			},
 			Body: []byte(matches[1]),
+		}
+		return response
+	case strings.HasPrefix(request.RequestTarget, "/files"):
+		r, err := regexp.Compile("/files/(.*)")
+		if err != nil {
+			fmt.Println("Error compiling regex")
+		}
+		matches := r.FindStringSubmatch(request.RequestTarget)
+
+		filePath := FileDirectory + matches[1]
+		fileContent, err := os.ReadFile(filePath)
+		if err != nil {
+			fmt.Println("Error reading file:", err)
+			return HttpResponse{
+				StatusLine: "HTTP/1.1 404 Not Found",
+			}
+		}
+		response := HttpResponse{
+			StatusLine: "HTTP/1.1 200 OK",
+			Headers: map[string]string{
+				"Content-Type":   "application/octet-stream",
+				"Content-Length": strconv.Itoa(len(fileContent)),
+			},
+			Body: []byte(fileContent),
 		}
 		return response
 	case request.RequestTarget == "/user-agent":

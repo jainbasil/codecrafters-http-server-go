@@ -1,11 +1,19 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net"
 	"os"
 )
+
+var FileDirectory string
+
+func init() {
+	flag.StringVar(&FileDirectory, "directory", ".", "the directory to serve files from")
+	flag.Parse()
+}
 
 func main() {
 	fmt.Printf("Listening on host: localhost, port: 4221\n")
@@ -25,7 +33,6 @@ func main() {
 
 	for {
 		conn, err := l.Accept()
-		log.Println("Connection received")
 		if err != nil {
 			log.Fatal("Error accepting connection: ", err.Error())
 		}
