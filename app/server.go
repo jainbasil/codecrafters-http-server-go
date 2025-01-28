@@ -1,12 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"net"
 	"os"
-	"strings"
 )
 
 func main() {
@@ -39,21 +37,10 @@ func main() {
 			if err != nil {
 				fmt.Println("Error reading: ", err.Error())
 			}
-			req := string(bytes.NewBuffer(buf).String())
-			fmt.Println(req)
+			req := ParseRequest(buf)
+			res := HandleRequest(req)
 
-			// split by \r\n and get the first line --> request line.
-			requestLine := strings.Split(req, "\r\n")[0]
-			requestTarget := strings.Fields(requestLine)[1]
-
-			response := "HTTP/1.1 200 OK\r\n\r\n"
-
-			// only supports /
-			if requestTarget != "/" {
-				response = "HTTP/1.1 404 Not Found\r\n\r\n"
-			}
-
-			conn.Write([]byte(response))
+			conn.Write(SerializeReponse(res))
 			conn.Close()
 		}(conn)
 	}
