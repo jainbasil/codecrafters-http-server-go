@@ -77,6 +77,17 @@ func HandleRequest(request HttpRequest) HttpResponse {
 			Body: []byte(matches[1]),
 		}
 		return response
+	case request.RequestTarget == "/user-agent":
+		userAgent := request.Headers["User-Agent"]
+		response := HttpResponse{
+			StatusLine: "HTTP/1.1 200 OK",
+			Headers: map[string]string{
+				"Content-Type":   "text/plain",
+				"Content-Length": strconv.Itoa(len(userAgent)),
+			},
+			Body: []byte(userAgent),
+		}
+		return response
 	case request.RequestTarget == "/":
 		response := HttpResponse{
 			StatusLine: "HTTP/1.1 200 OK",
