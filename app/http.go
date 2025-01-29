@@ -69,13 +69,19 @@ func HandleRequest(request HttpRequest) HttpResponse {
 		}
 		matches := r.FindStringSubmatch(request.RequestTarget)
 
+		headers := map[string]string{
+			"Content-Type":   "text/plain",
+			"Content-Length": strconv.Itoa(len(matches[1])),
+		}
+
+		if request.Headers["Accept-Encoding"] == "gzip" {
+			headers["Content-Encoding"] = "gzip"
+		}
+
 		response := HttpResponse{
 			StatusLine: "HTTP/1.1 200 OK",
-			Headers: map[string]string{
-				"Content-Type":   "text/plain",
-				"Content-Length": strconv.Itoa(len(matches[1])),
-			},
-			Body: []byte(matches[1]),
+			Headers:    headers,
+			Body:       []byte(matches[1]),
 		}
 		return response
 	case strings.HasPrefix(request.RequestTarget, "/files"):
